@@ -11,129 +11,226 @@ import { CheckoutPage } from "../pages/CheckoutPage";
 import { testData } from "../utils/testData";
 
 test.describe("Amazon End-to-End Purchase Flow", () => {
-  test("Search product → Add to cart → Checkout", async ({ page }) => {
-    // 1. Create Home Page
+  test("Add Mouse + Laptop → Cart → Remove Mouse → Checkout", async ({
+    page,
+  }) => {
     const homePage = new HomePage(page);
-
-    // 2. Create Search Results Page
     const searchResultsPage = new SearchResultsPage(page);
 
-    // 3. Open Amazon
+    // =========================================================
+    // Open Amazon
+    // =========================================================
+
     await homePage.goto();
 
     console.log("Amazon opened successfully");
 
-    // 4. Search Product
-    await homePage.searchProduct(testData.invalidProduct);
+    // =========================================================
+    // Search Mouse
+    // =========================================================
 
-    await page.waitForTimeout(6000);
+    await homePage.searchProduct(testData.validProduct.first);
 
-    console.log(`Searching for: ${testData.invalidProduct}`);
+    console.log(`Searching for: ${testData.validProduct.first}`);
 
-    await homePage.searchProduct(testData.validProduct);
-
-    await page.waitForTimeout(6000);
-
-    // 5. Verify Search Results
     await searchResultsPage.waitForResults();
 
-    const productCount = await searchResultsPage.getProductCount();
+    const mouseName = await searchResultsPage.getFirstProductTitle();
 
-    console.log("Product count:", productCount);
+    console.log("Mouse selected:", mouseName);
 
-    expect(productCount).toBeGreaterThan(0);
+    expect(mouseName).not.toBe("");
 
-    // 6. Get First Product
-    const productName = await searchResultsPage.getFirstProductTitle();
+    // =========================================================
+    // Open Mouse Product
+    // =========================================================
 
-    console.log("Selected product:", productName);
+    const mousePage = await searchResultsPage.clickFirstProduct();
 
-    expect(productName).not.toBe("");
+    console.log("Mouse product page:", mousePage.url());
 
-    // 7. Open Product
-    const productPage = await searchResultsPage.clickFirstProduct();
+    const mouseDetailsPage = new ProductDetailsPage(mousePage);
 
-    console.log("Product page URL:", productPage.url());
+    await mouseDetailsPage.waitForProduct();
 
-    // 8. Create Product Details Page
-    const productDetailsPage = new ProductDetailsPage(productPage);
+    const mouseDetailName = await mouseDetailsPage.getProductTitle();
 
-    // 9. Verify Product Page
-    await productDetailsPage.waitForProduct();
+    console.log("Mouse details:", mouseDetailName);
 
-    const detailProductName = await productDetailsPage.getProductTitle();
+    expect(mouseDetailName).not.toBe("");
 
-    console.log("Product details:", detailProductName);
+    // =========================================================
+    // Add Mouse To Cart
+    // =========================================================
 
-    expect(detailProductName).not.toBe("");
+    await mouseDetailsPage.addToCart();
 
-    // 10. Add Product To Cart
-    await productDetailsPage.addToCart();
+    console.log("Mouse added to cart");
 
-    // Give Amazon time to process the request
-    await productPage.waitForTimeout(3000);
+    // =========================================================
+    // Return To Home
+    // =========================================================
 
-    // 11. Create Cart Page
-    const cartPage = new CartPage(productPage);
+    await page.goto("/");
 
-    // 12. Open Cart
+    await page.waitForLoadState("domcontentloaded");
+
+    console.log("Returned to Amazon home page");
+
+    // =========================================================
+    // Search Laptop
+    // =========================================================
+
+    await homePage.searchProduct(testData.validProduct.second);
+
+    console.log(`Searching for: ${testData.validProduct.second}`);
+
+    await searchResultsPage.waitForResults();
+
+    const laptopName = await searchResultsPage.getFirstProductTitle();
+
+    console.log("Laptop selected:", laptopName);
+
+    expect(laptopName).not.toBe("");
+
+    // =========================================================
+    // Open Laptop Product
+    // =========================================================
+
+    const laptopPage = await searchResultsPage.clickFirstProduct();
+
+    console.log("Laptop product page:", laptopPage.url());
+
+    const laptopDetailsPage = new ProductDetailsPage(laptopPage);
+
+    await laptopDetailsPage.waitForProduct();
+
+    const laptopDetailName = await laptopDetailsPage.getProductTitle();
+
+    console.log("Laptop details:", laptopDetailName);
+
+    expect(laptopDetailName).not.toBe("");
+
+    // =========================================================
+    // Add Laptop To Cart
+    // =========================================================
+
+    await laptopDetailsPage.addToCart();
+
+    console.log("Laptop added to cart");
+
+    // =========================================================
+    // Open Cart
+    // =========================================================
+
+    const cartPage = new CartPage(laptopPage);
+
     await cartPage.openCart();
 
     console.log("Cart opened");
 
-    // 13. Verify Product Is Actually In Cart
-    await cartPage.verifyProductInCart(productName);
+    // =========================================================
+    // Verify Mouse
+    // =========================================================
 
-    // Increment quantity
+    await cartPage.verifyProductInCart(mouseName);
 
-    await cartPage.incrementQuantity();
+    console.log("Mouse verified in cart");
 
-    await page.waitForTimeout(6000);
+    // =========================================================
+    // Verify Laptop
+    // =========================================================
 
-    await cartPage.incrementQuantity();
+    await cartPage.verifyProductInCart(laptopName);
 
-    await page.waitForTimeout(6000);
+    console.log("Laptop verified in cart");
 
-    await cartPage.incrementQuantity();
+    // =========================================================
+    // Increment Laptop Quantity
+    // =========================================================
 
-    await page.waitForTimeout(6000);
+    await cartPage.incrementQuantity(laptopName);
 
-    await cartPage.decrementQuantity();
+    console.log("Laptop quantity incremented");
 
-    console.log("Product verified in cart");
+    // =========================================================
+    // Increment Laptop Again
+    // =========================================================
 
-    // 14. Proceed To Buy
+    await cartPage.incrementQuantity(laptopName);
+
+    console.log("Laptop quantity incremented again");
+
+    // =========================================================
+    // Decrement Laptop
+    // =========================================================
+
+    await cartPage.decrementQuantity(laptopName);
+
+    console.log("Laptop quantity decremented");
+
+    // =========================================================
+    // Remove Mouse
+    // =========================================================
+
+    await cartPage.removeProductFromCart(mouseName);
+
+    console.log("Mouse removed from cart");
+
+    // =========================================================
+    // Verify Laptop Still Exists
+    // =========================================================
+
+    await cartPage.verifyProductInCart(laptopName);
+
+    console.log("Laptop is still present in cart");
+
+    // =========================================================
+    // Proceed To Checkout
+    // =========================================================
+
     await cartPage.proceedToCheckout();
 
     console.log("Proceeding to checkout");
 
-    // 15. Create Address Page
-    const addressPage = new AddressPage(productPage);
+    console.log("Current checkout URL:", laptopPage.url());
 
-    // 16. Select Address
+    // =========================================================
+    // Address
+    // =========================================================
+
+    const addressPage = new AddressPage(laptopPage);
+
     await addressPage.selectAddress();
 
     await addressPage.continueWithAddress();
 
     console.log("Address selected");
 
-    // 17. Create Payment Page
-    const paymentPage = new PaymentPage(productPage);
+    console.log("URL after address selection:", laptopPage.url());
 
-    // 18. Select Payment Method
+    // =========================================================
+    // Payment
+    // =========================================================
+
+    const paymentPage = new PaymentPage(laptopPage);
+
     await paymentPage.selectPaymentMethod();
 
     console.log("Payment method selected");
 
-    // 19. Create Checkout Page
-    const checkoutPage = new CheckoutPage(productPage);
+    console.log("URL after payment selection:", laptopPage.url());
 
-    // 20. Final Order Review
+    // =========================================================
+    // Checkout
+    // =========================================================
+
+    const checkoutPage = new CheckoutPage(laptopPage);
+
     await checkoutPage.verifyPlaceOrderButton();
 
     console.log("Final order review page reached");
 
-    // 21. Verify Place Order Button
     await expect(checkoutPage.placeOrderButton).toBeVisible();
 
     console.log("E2E checkout flow completed");

@@ -1,11 +1,9 @@
-import { Page, Locator } from "@playwright/test";
+import { Page, Locator, expect } from "@playwright/test";
 
 export class CartPage {
   readonly page: Page;
   readonly cartButton: Locator;
   readonly proceedToBuyButton: Locator;
-  readonly incrementButton: Locator;
-  readonly decrementButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -15,9 +13,14 @@ export class CartPage {
     this.proceedToBuyButton = page.locator(
       'input[name="proceedToRetailCheckout"]',
     );
+  }
 
-    this.incrementButton = page.locator('button[data-a-selector="increment"]');
-    this.decrementButton = page.locator('button[data-a-selector="decrement"]');
+  private getProductRow(productName: string): Locator {
+    return this.page.locator("div.sc-list-item").filter({
+      has: this.page.getByText(productName, {
+        exact: false,
+      }),
+    });
   }
 
   async openCart() {
@@ -31,69 +34,83 @@ export class CartPage {
   }
 
   async verifyProductInCart(productName: string) {
-    console.log("Checking whether product exists in cart...");
+    console.log(`Checking product in cart: ${productName}`);
 
-    const product = this.page.getByText(productName, {
-      exact: false,
-    });
+    const product = this.getProductRow(productName);
 
-    const count = await product.count();
+    await expect(product.first()).toBeVisible();
 
-    console.log("Matching product count in cart:", count);
-
-    if (count === 0) {
-      throw new Error(`Product was not found in cart: ${productName}`);
-    }
-
-    console.log("Product successfully verified in cart.");
+    console.log(`Product successfully verified: ${productName}`);
   }
 
-  async incrementQuantity() {
-    console.log("Incrementing product quantity...");
+  async incrementQuantity(productName: string) {
+    console.log(`Incrementing quantity for: ${productName}`);
 
-    const count = await this.incrementButton.count();
+    const product = this.getProductRow(productName);
 
-    console.log("Increment buttons found:", count);
+    await expect(product.first()).toBeVisible();
 
-    if (count === 0) {
-      throw new Error("Increment button was not found in the cart.");
-    }
+    const incrementButton = product
+      .first()
+      .locator('button[data-a-selector="increment"]');
 
-    await this.incrementButton.first().scrollIntoViewIfNeeded();
+    await expect(incrementButton).toBeVisible();
 
-    await this.incrementButton.first().click();
+    await incrementButton.scrollIntoViewIfNeeded();
 
-    console.log("Product quantity incremented.");
+    await incrementButton.click();
+
+    console.log(`Quantity incremented for: ${productName}`);
   }
 
-  async decrementQuantity() {
-    console.log("Decrementing product quantity");
+  async decrementQuantity(productName: string) {
+    console.log(`Decrementing quantity for: ${productName}`);
 
-    const count = await this.decrementButton.count();
+    const product = this.getProductRow(productName);
 
-    console.log("Decrement button ", count);
+    await expect(product.first()).toBeVisible();
 
-    if (count === 0) {
-      throw new Error("Decrement button was not found in the cart.");
-    }
+    const decrementButton = product
+      .first()
+      .locator('button[data-a-selector="decrement"]');
 
-    await this.decrementButton.first().scrollIntoViewIfNeeded();
+    await expect(decrementButton).toBeVisible();
 
-    if (count > 0) {
-      await this.decrementButton.first().click();
-    }
+    await decrementButton.scrollIntoViewIfNeeded();
 
-    console.log("Product Quantity decremented");
+    await decrementButton.click();
+
+    console.log(`Quantity decremented for: ${productName}`);
+  }
+
+  async removeProductFromCart(productName: string) {
+    console.log(`Removing product from cart: ${productName}`);
+
+    const product = this.getProductRow(productName);
+
+    await expect(product.first()).toBeVisible();
+
+    const deleteButton = product
+      .first()
+      .locator('input[data-feature-id="item-delete-button"]');
+
+    await expect(deleteButton).toBeVisible();
+
+    await deleteButton.scrollIntoViewIfNeeded();
+
+    await deleteButton.click();
+
+    console.log(`Delete clicked for: ${productName}`);
+
+    await expect(product.first()).toHaveCount(0);
+
+    console.log(`Product successfully removed: ${productName}`);
   }
 
   async proceedToCheckout() {
-    const count = await this.proceedToBuyButton.count();
+    console.log("Proceeding to checkout...");
 
-    console.log("Proceed to Buy count:", count);
-
-    if (count === 0) {
-      throw new Error("Proceed to Buy button was not found on the cart page.");
-    }
+    await expect(this.proceedToBuyButton.first()).toBeVisible();
 
     await this.proceedToBuyButton.first().scrollIntoViewIfNeeded();
 
