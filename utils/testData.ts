@@ -1,3 +1,5 @@
 export const testData = {
-  product: "laptop",
+  validProduct: "mouse",
+  invalidProduct: "xyzproduct123",
+  emptyProduct: "",
 };

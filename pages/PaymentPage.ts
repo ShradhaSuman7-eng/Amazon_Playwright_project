@@ -16,5 +16,9 @@ export class PaymentPage {
     if (count > 0) {
       await this.paymentOptions.first().check();
     }
+
+    let firstPayment = this.paymentOptions.first();
+
+    console.log("First Payment", firstPayment);
   }
 }

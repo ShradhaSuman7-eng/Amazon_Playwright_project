@@ -93,4 +93,8 @@ export class ProductDetailsPage {
       bodyText.toLowerCase().includes("added to cart"),
     );
   }
+
+  // async increaseCount():Promise<string>{
+  //   return await this.
+  // }
 }

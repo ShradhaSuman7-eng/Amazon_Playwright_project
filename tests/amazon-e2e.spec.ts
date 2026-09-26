@@ -24,9 +24,15 @@ test.describe("Amazon End-to-End Purchase Flow", () => {
     console.log("Amazon opened successfully");
 
     // 4. Search Product
-    await homePage.searchProduct(testData.product);
+    await homePage.searchProduct(testData.invalidProduct);
 
-    console.log(`Searching for: ${testData.product}`);
+    await page.waitForTimeout(6000);
+
+    console.log(`Searching for: ${testData.invalidProduct}`);
+
+    await homePage.searchProduct(testData.validProduct);
+
+    await page.waitForTimeout(6000);
 
     // 5. Verify Search Results
     await searchResultsPage.waitForResults();
@@ -77,6 +83,22 @@ test.describe("Amazon End-to-End Purchase Flow", () => {
 
     // 13. Verify Product Is Actually In Cart
     await cartPage.verifyProductInCart(productName);
+
+    // Increment quantity
+
+    await cartPage.incrementQuantity();
+
+    await page.waitForTimeout(6000);
+
+    await cartPage.incrementQuantity();
+
+    await page.waitForTimeout(6000);
+
+    await cartPage.incrementQuantity();
+
+    await page.waitForTimeout(6000);
+
+    await cartPage.decrementQuantity();
 
     console.log("Product verified in cart");
 

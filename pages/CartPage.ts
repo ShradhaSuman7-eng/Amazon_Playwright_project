@@ -4,6 +4,8 @@ export class CartPage {
   readonly page: Page;
   readonly cartButton: Locator;
   readonly proceedToBuyButton: Locator;
+  readonly incrementButton: Locator;
+  readonly decrementButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -13,12 +15,14 @@ export class CartPage {
     this.proceedToBuyButton = page.locator(
       'input[name="proceedToRetailCheckout"]',
     );
+
+    this.incrementButton = page.locator('button[data-a-selector="increment"]');
+    this.decrementButton = page.locator('button[data-a-selector="decrement"]');
   }
 
   async openCart() {
     console.log("Opening Amazon cart...");
 
-    // Avoid the Add-to-Cart overlay intercepting the navigation click.
     await this.page.goto("/gp/cart/view.html");
 
     await this.page.waitForLoadState("domcontentloaded");
@@ -42,6 +46,44 @@ export class CartPage {
     }
 
     console.log("Product successfully verified in cart.");
+  }
+
+  async incrementQuantity() {
+    console.log("Incrementing product quantity...");
+
+    const count = await this.incrementButton.count();
+
+    console.log("Increment buttons found:", count);
+
+    if (count === 0) {
+      throw new Error("Increment button was not found in the cart.");
+    }
+
+    await this.incrementButton.first().scrollIntoViewIfNeeded();
+
+    await this.incrementButton.first().click();
+
+    console.log("Product quantity incremented.");
+  }
+
+  async decrementQuantity() {
+    console.log("Decrementing product quantity");
+
+    const count = await this.decrementButton.count();
+
+    console.log("Decrement button ", count);
+
+    if (count === 0) {
+      throw new Error("Decrement button was not found in the cart.");
+    }
+
+    await this.decrementButton.first().scrollIntoViewIfNeeded();
+
+    if (count > 0) {
+      await this.decrementButton.first().click();
+    }
+
+    console.log("Product Quantity decremented");
   }
 
   async proceedToCheckout() {
